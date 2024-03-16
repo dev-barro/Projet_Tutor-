@@ -1,4 +1,3 @@
-
 import 'package:application/pages/event_page.dart';
 import 'package:flutter/material.dart';
 
@@ -21,12 +20,14 @@ class HomePage extends StatelessWidget {
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           //insertion de l'image comme le logo de l'appli
           Image.asset("assets/images/drapbf1.png"),
+
           const Text(
             "CampusOrientApp",
-            style: TextStyle(fontSize: 32, fontFamily: ('Poppins')),
+            style: TextStyle(
+                fontSize: 32, fontFamily: ('Poppins'), color: Colors.white70),
           ),
           const Text(
-            "OrientaApp 2024 est l'Appli guide parfait pour reussir son orientation universitaire ",
+            "OrientaApp est l'Appli guide parfait pour reussir son orientation universitaire ",
             //definir la taille du fichier
             style: TextStyle(fontSize: 20),
             textAlign: TextAlign.center,
