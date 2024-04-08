@@ -1,13 +1,18 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:application/pages/PageInsertion.dart';
 import 'package:application/pages/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:application/pages/ModelsTable.dart';
+// ignore: unused_import
+import 'package:flutter/scheduler.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() async {
   sqfliteFfiInit();
   runApp(const MyApp());
+
+  await DatabaseHelper.insertListOfUniversites(universites);
 }
 
 class MyApp extends StatelessWidget {
@@ -16,7 +21,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Database Example',
+      title: 'Les universités de formations au burkina Faso',
+      themeAnimationCurve: Curves.bounceIn,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -61,7 +67,14 @@ class _DatabaseExamplePageState extends State<DatabaseExamplePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Database Example'),
+        title: const Text('Les universités de formations au burkina Faso'),
+        titleTextStyle: const TextStyle(
+            fontFamily: 'Poppins',
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w100),
+        centerTitle: true,
+        backgroundColor: Colors.blue,
       ),
       body: Center(
         child: FutureBuilder<List<Universite>>(

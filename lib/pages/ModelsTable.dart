@@ -14,6 +14,14 @@ class Universite {
       'adresse': adresse,
     };
   }
+
+  factory Universite.fromMap(Map<String, dynamic> map) {
+    return Universite(
+      id: map['id'],
+      nom: map['nom'],
+      adresse: map['adresse'],
+    );
+  }
 }
 
 //model Filiere//
@@ -21,15 +29,23 @@ class Filiere {
   final int id;
   final String nom;
   final String fraisInscription;
-  
 
-  Filiere({required this.id, required this.nom,required this.fraisInscription});
+  Filiere(
+      {required this.id, required this.nom, required this.fraisInscription});
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'nom': nom,
     };
+  }
+
+  factory Filiere.fromMap(Map<String, dynamic> map) {
+    return Filiere(
+      id: map['id'],
+      nom: map['nom'],
+      fraisInscription: map['fraisInscription'],
+    );
   }
 }
 
@@ -62,6 +78,13 @@ class Diplome {
       'id': id,
       'nom': nom,
     };
+  }
+
+  factory Diplome.fromMap(Map<String, dynamic> map) {
+    return Diplome(
+      id: map['id'],
+      nom: map['nom'],
+    );
   }
 }
 
@@ -98,6 +121,14 @@ class DiplomesFinCycle {
       'id_option': idOption,
     };
   }
+
+  factory DiplomesFinCycle.fromMap(Map<String, dynamic> map) {
+    return DiplomesFinCycle(
+      id: map['id'],
+      nom: map['nom'],
+      idOption: map['id_option'],
+    );
+  }
 }
 
 class Debouche {
@@ -113,5 +144,13 @@ class Debouche {
       'nom': nom,
       'id_filiere': idFiliere,
     };
+  }
+
+  factory Debouche.fromMap(Map<String, dynamic> map) {
+    return Debouche(
+      id: map['id'],
+      nom: map['nom'],
+      idFiliere: map['id_filiere'],
+    );
   }
 }

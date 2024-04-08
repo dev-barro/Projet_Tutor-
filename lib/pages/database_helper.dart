@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:application/pages/ModelsTable.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -34,22 +36,28 @@ class DatabaseHelper {
     );
   }
 
-  static Future<void> insertUniversite(Universite universite) async {
-    final db = await database;
-    await db.insert(
-      'Universite',
-      universite.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
+  // static Future<void> insertUniversite(Universite universite) async {
+  //   final db = await database;
+  //   await db.insert(
+  //     'Universite',
+  //     universite.toMap(),
+  //     conflictAlgorithm: ConflictAlgorithm.replace,
+  //   );
+  // }
 
-  static Future<void> insertFiliere(Filiere filiere) async {
+  static Future<void> insertListOfUniversites(
+      List<Universite> universites) async {
     final db = await database;
-    await db.insert(
-      'Filiere',
-      filiere.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    Batch batch = db.batch();
+    for (Universite universite in universites) {
+      batch.insert(
+        'Universite',
+        universite.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit();
+    print('Toutes les universités ont été insérées avec succès!');
   }
 
   //debut de la recupération des données des tables
@@ -127,4 +135,18 @@ class DatabaseHelper {
     });
   }
   //debut de la recupération des données des tables
+
+  // Des Mise à jours
+  static Future<void> updateAllUniversites(List<Universite> universites) async {
+    final db = await database;
+    for (Universite universite in universites) {
+      await db.update(
+        'Universite',
+        universite.toMap(),
+        where: 'id = ?',
+        whereArgs: [universite.id],
+      );
+    }
+    print('Toutes les universités ont été mises à jour avec succès!');
+  }
 }
