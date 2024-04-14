@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, duplicate_ignore
 
 import 'dart:async';
 
@@ -124,6 +124,19 @@ class DatabaseHelper {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
+static Future<void> insertListOfUniversiteFilieres(List<Map<String, dynamic>> universiteFilieres) async {
+  final db = await database;
+  Batch batch = db.batch();
+  for (var liaison in universiteFilieres) {
+    batch.insert(
+      'UniversiteFiliere',
+      liaison,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+  await batch.commit();
+  print('Toutes les liaisons entre universités et filières ont été insérées avec succès!');
+}
 
   static Future<void> linkDiplomeToFiliere(int idDiplome, int idFiliere) async {
     final db = await database;

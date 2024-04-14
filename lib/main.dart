@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:application/ListDeFiliere.dart';
 import 'package:application/pages/DebouchesList.dart';
-import 'package:application/pages/PageInsertion.dart';
+import 'package:application/pages/UniversiteList.dart';
+import 'package:application/pages/JointureUniversiteFiliere.dart';
 import 'package:flutter/material.dart';
 import 'package:application/pages/database_helper.dart';
 import 'package:application/pages/ModelsTable.dart';
@@ -12,10 +13,11 @@ void main() async {
   await DatabaseHelper.insertListOfUniversites(universites);
   await DatabaseHelper.insertListOfDebouches(debouches);
   await DatabaseHelper.insertListOfFiliere(filieres);
+  await DatabaseHelper.insertListOfUniversiteFilieres(universiteFilieres);
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
