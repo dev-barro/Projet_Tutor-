@@ -4,14 +4,16 @@ class Universite {
   final int id;
   final String nom;
   final String adresse;
+  final String imagePath;
   //le constructeur qui permettra d'initialiser Universite
-  Universite({required this.id, required this.nom, required this.adresse});
+  Universite({required this.id, required this.nom, required this.adresse,required this.imagePath});
   // la methode qui permet de mapper les données de la classe
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'nom': nom,
       'adresse': adresse,
+      'imagePath':imagePath
     };
   }
 
@@ -20,6 +22,8 @@ class Universite {
       id: map['id'],
       nom: map['nom'],
       adresse: map['adresse'],
+      imagePath: map['imagePath'],
+
     );
   }
 }
@@ -93,6 +97,7 @@ class DiplomeFiliere {
   final int id;
   final int idDiplome;
   final int idFiliere;
+  
 
   DiplomeFiliere(
       {required this.id, required this.idDiplome, required this.idFiliere});

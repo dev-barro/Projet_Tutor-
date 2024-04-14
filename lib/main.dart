@@ -1,28 +1,26 @@
-// ignore_for_file: library_private_types_in_public_api
+import 'dart:io';
 
+import 'package:application/ListDeFiliere.dart';
+import 'package:application/pages/DebouchesList.dart';
 import 'package:application/pages/PageInsertion.dart';
-import 'package:application/pages/database_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:application/pages/database_helper.dart';
 import 'package:application/pages/ModelsTable.dart';
-// ignore: unused_import
-import 'package:flutter/scheduler.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() async {
-  sqfliteFfiInit();
   runApp(const MyApp());
-
   await DatabaseHelper.insertListOfUniversites(universites);
+  await DatabaseHelper.insertListOfDebouches(debouches);
+  await DatabaseHelper.insertListOfFiliere(filieres);
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Les universités de formations au burkina Faso',
-      themeAnimationCurve: Curves.bounceIn,
+      title: 'Les universités de formations au Burkina Faso',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -35,16 +33,12 @@ class DatabaseExamplePage extends StatefulWidget {
   const DatabaseExamplePage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _DatabaseExamplePageState createState() => _DatabaseExamplePageState();
 }
 
 class _DatabaseExamplePageState extends State<DatabaseExamplePage> {
   late Future<List<Universite>> universitesFuture;
-  late Future<List<Filiere>> filieresFuture;
-  late Future<List<Diplome>> diplomesFuture;
-  late Future<List<DiplomeFiliere>> diplomesFiliereFuture;
-  late Future<List<DiplomesFinCycle>> diplomesFinCycleFuture;
-  late Future<List<Debouche>> debouchesFuture;
 
   @override
   void initState() {
@@ -55,11 +49,6 @@ class _DatabaseExamplePageState extends State<DatabaseExamplePage> {
   Future<void> refreshData() async {
     setState(() {
       universitesFuture = DatabaseHelper.getAllUniversites();
-      filieresFuture = DatabaseHelper.getAllFilieres();
-      diplomesFuture = DatabaseHelper.getAllDiplomes();
-      diplomesFiliereFuture = DatabaseHelper.getAllDiplomesFiliere();
-      diplomesFinCycleFuture = DatabaseHelper.getAllDiplomesFinCycle();
-      debouchesFuture = DatabaseHelper.getAllDebouches();
     });
   }
 
@@ -67,12 +56,7 @@ class _DatabaseExamplePageState extends State<DatabaseExamplePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Les universités de formations au burkina Faso'),
-        titleTextStyle: const TextStyle(
-            fontFamily: 'Poppins',
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w100),
+        title: const Text('Les universités de formations au Burkina Faso'),
         centerTitle: true,
         backgroundColor: Colors.blue,
       ),
@@ -89,10 +73,15 @@ class _DatabaseExamplePageState extends State<DatabaseExamplePage> {
               return ListView.builder(
                 itemCount: universites.length,
                 itemBuilder: (context, index) {
-                  final universite = universites[index];
+                  Universite universite = universites[index];
                   return ListTile(
                     title: Text(universite.nom),
                     subtitle: Text(universite.adresse),
+                    leading: universite.imagePath.isNotEmpty
+                        ? Image.file(File(universite
+                            .imagePath)) // Charger l'image à partir du chemin d'accès
+                        : const Icon(Icons
+                            .image_not_supported), // Si aucun chemin d'accès n'est disponible
                   );
                 },
               );

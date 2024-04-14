@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 
 import 'package:application/pages/ModelsTable.dart';
@@ -7,33 +9,38 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class DatabaseHelper {
   static Future<Database> get database async {
     databaseFactory = databaseFactoryFfi;
-    return openDatabase(
-      join(await getDatabasesPath(), 'university.db'),
-      onCreate: (db, version) async {
-        await db.execute(
-          "CREATE TABLE Universite(id INTEGER PRIMARY KEY, nom TEXT, adresse TEXT)",
-        );
-        await db.execute(
-          "CREATE TABLE Filiere(id INTEGER PRIMARY KEY, nom TEXT, fraisInscription TEXT)",
-        );
-        await db.execute(
-          "CREATE TABLE FiliereUniversite(id INTEGER PRIMARY KEY, id_filiere INTEGER, id_universite INTEGER)",
-        );
-        await db.execute(
-          "CREATE TABLE Diplome(id INTEGER PRIMARY KEY, nom TEXT)",
-        );
-        await db.execute(
-          "CREATE TABLE DiplomeFiliere(id INTEGER PRIMARY KEY, id_diplome INTEGER, id_filiere INTEGER)",
-        );
-        await db.execute(
-          "CREATE TABLE DiplomesFinCycle(id INTEGER PRIMARY KEY, nom TEXT, id_option INTEGER)",
-        );
-        await db.execute(
-          "CREATE TABLE Debouche(id INTEGER PRIMARY KEY, nom TEXT, id_filiere INTEGER)",
-        );
-      },
-      version: 1,
-    );
+    return openDatabase(join(await getDatabasesPath(), 'university.db'),
+        onCreate: (db, version) async {
+          await db.execute(
+            "CREATE TABLE Universite(id INTEGER PRIMARY KEY, nom TEXT, adresse TEXT)",
+          );
+          await db.execute(
+            "CREATE TABLE Filiere(id INTEGER PRIMARY KEY, nom TEXT, fraisInscription TEXT)",
+          );
+          await db.execute(
+            "CREATE TABLE FiliereUniversite(id INTEGER PRIMARY KEY, id_filiere INTEGER, id_universite INTEGER)",
+          );
+          await db.execute(
+            "CREATE TABLE Diplome(id INTEGER PRIMARY KEY, nom TEXT)",
+          );
+          await db.execute(
+            "CREATE TABLE DiplomeFiliere(id INTEGER PRIMARY KEY, id_diplome INTEGER, id_filiere INTEGER)",
+          );
+          await db.execute(
+            "CREATE TABLE DiplomesFinCycle(id INTEGER PRIMARY KEY, nom TEXT, id_option INTEGER)",
+          );
+          await db.execute(
+            "CREATE TABLE Debouche(id INTEGER PRIMARY KEY, nom TEXT, id_filiere INTEGER)",
+          );
+        },
+        version: 2, // Assurez-vous que la version est correctement définie
+        onUpgrade: (db, oldVersion, newVersion) async {
+          if (oldVersion < 2) {
+            // Si la version précédente était inférieure à 2, ajoutez la colonne imagePath à la table Universite
+            await db
+                .execute("ALTER TABLE Universite ADD COLUMN imagePath TEXT");
+          }
+        });
   }
 
   // static Future<void> insertUniversite(Universite universite) async {
@@ -60,6 +67,95 @@ class DatabaseHelper {
     print('Toutes les universités ont été insérées avec succès!');
   }
 
+  static Future<int> insertListOfFiliere(List<Filiere> filieres) async {
+    final db = await database;
+    Batch batch = db.batch();
+    for (Filiere filiere in filieres) {
+      batch.insert(
+        'Filiere',
+        filiere.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    final List<dynamic> result = await batch.commit();
+    final int insertedCount = result.length;
+    // ignore: avoid_print
+    print('$insertedCount filières ont été insérées avec succès!');
+    return insertedCount;
+  }
+
+//insertion d'une liste de données
+  static Future<void> insertListOfDiplomes(List<String> diplomes) async {
+    final db = await database;
+    Batch batch = db.batch();
+    for (String nomDiplome in diplomes) {
+      batch.insert(
+        'Diplome',
+        {'nom': nomDiplome},
+      );
+    }
+    await batch.commit();
+    print('Tous les diplômes ont été insérés avec succès!');
+  }
+
+//insertion d'une liste de debouchées
+  static Future<void> insertListOfDebouches(
+      List<Map<String, dynamic>> debouches) async {
+    final db = await database;
+    Batch batch = db.batch();
+    for (var debouche in debouches) {
+      batch.insert(
+        'Debouche',
+        debouche,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit();
+    print(
+        'Toutes les données ont été insérées dans la table Debouche avec succès!');
+  }
+
+  static Future<void> linkUniversiteToFiliere(
+      int idUniversite, int idFiliere) async {
+    final db = await database;
+    await db.insert(
+      'UniversiteFiliere',
+      {'id_universite': idUniversite, 'id_filiere': idFiliere},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  static Future<void> linkDiplomeToFiliere(int idDiplome, int idFiliere) async {
+    final db = await database;
+    await db.insert(
+      'DiplomeFiliere',
+      {'id_diplome': idDiplome, 'id_filiere': idFiliere},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+// Insérer des données dans la table de liaison DiplomesFinCycle
+  static Future<void> linkOptionToDiplomeFinCycle(
+      int idOption, int idDiplomeFinCycle) async {
+    final db = await database;
+    await db.insert(
+      'DiplomesFinCycle',
+      {'id_option': idOption, 'id_diplome': idDiplomeFinCycle},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // Insérer des données dans la table de liaison Debouche
+  static Future<void> linkDeboucheToFiliere(
+      int idDebouche, int idFiliere) async {
+    final db = await database;
+    await db.insert(
+      'Debouche',
+      {'id': idDebouche, 'id_filiere': idFiliere},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   //debut de la recupération des données des tables
   static Future<List<Universite>> getAllUniversites() async {
     final db = await database;
@@ -67,10 +163,10 @@ class DatabaseHelper {
         await db.query('Universite');
     return List.generate(universiteMaps.length, (i) {
       return Universite(
-        id: universiteMaps[i]['id'],
-        nom: universiteMaps[i]['nom'],
-        adresse: universiteMaps[i]['adresse'],
-      );
+          id: universiteMaps[i]['id'],
+          nom: universiteMaps[i]['nom'],
+          adresse: universiteMaps[i]['adresse'],
+          imagePath: universiteMaps[i]['imagePath']);
     });
   }
 
@@ -134,6 +230,25 @@ class DatabaseHelper {
       );
     });
   }
+
+  // recuperation des filière en fonction des universités
+  static Future<List<Filiere>> getFilieresByUniversite(int universiteId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> filiereMaps = await db.rawQuery('''
+    SELECT Filiere.*
+    FROM Filiere
+    INNER JOIN FiliereUniversite ON Filiere.id = FiliereUniversite.id_filiere
+    WHERE FiliereUniversite.id_universite = ?
+  ''', [universiteId]);
+    return List.generate(filiereMaps.length, (i) {
+      return Filiere(
+        id: filiereMaps[i]['id'],
+        nom: filiereMaps[i]['nom'],
+        fraisInscription: filiereMaps[i]['fraisInscription'],
+      );
+    });
+  }
+
   //debut de la recupération des données des tables
 
   // Des Mise à jours
