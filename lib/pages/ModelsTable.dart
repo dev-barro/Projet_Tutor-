@@ -1,20 +1,17 @@
-// ignore_for_file: file_names
-
 class Universite {
   final int id;
   final String nom;
   final String adresse;
   final String imagePath;
   //le constructeur qui permettra d'initialiser Universite
-  Universite({required this.id, required this.nom, required this.adresse,required this.imagePath});
+  Universite(
+      {required this.id,
+      required this.nom,
+      required this.adresse,
+      required this.imagePath});
   // la methode qui permet de mapper les données de la classe
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'nom': nom,
-      'adresse': adresse,
-      'imagePath':imagePath
-    };
+    return {'id': id, 'nom': nom, 'adresse': adresse, 'imagePath': imagePath};
   }
 
   factory Universite.fromMap(Map<String, dynamic> map) {
@@ -23,7 +20,6 @@ class Universite {
       nom: map['nom'],
       adresse: map['adresse'],
       imagePath: map['imagePath'],
-
     );
   }
 }
@@ -97,7 +93,6 @@ class DiplomeFiliere {
   final int id;
   final int idDiplome;
   final int idFiliere;
-  
 
   DiplomeFiliere(
       {required this.id, required this.idDiplome, required this.idFiliere});
@@ -156,6 +151,61 @@ class Debouche {
       id: map['id'],
       nom: map['nom'],
       idFiliere: map['id_filiere'],
+    );
+  }
+}
+
+class Options {
+  final int id;
+  final String name;
+  final String anneeDeOption;
+
+  Options({
+    required this.id,
+    required this.name,
+    required this.anneeDeOption,
+  });
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'anneeDeOption': anneeDeOption,
+    };
+  }
+
+  factory Options.fromMap(Map<String, dynamic> map) {
+    return Options(
+      id: map['id'],
+      name: map['name'],
+      anneeDeOption: map['anneeDeOption'],
+    );
+  }
+}
+
+class FiliereOptions {
+  final int id;
+  final int idFiliere;
+  final int idOption;
+
+  FiliereOptions({
+    required this.id,
+    required this.idFiliere,
+    required this.idOption,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'idFiliere': idFiliere,
+      'idOption': idOption,
+    };
+  }
+
+  factory FiliereOptions.fromMap(Map<String, dynamic> map) {
+    return FiliereOptions(
+      id: map['id'],
+      idFiliere: map['idFiliere'],
+      idOption: map['idOption'],
     );
   }
 }

@@ -12,24 +12,44 @@ class DatabaseHelper {
     return openDatabase(join(await getDatabasesPath(), 'university.db'),
         onCreate: (db, version) async {
           await db.execute(
+            //creation de la table qui va contenir les universités
             "CREATE TABLE Universite(id INTEGER PRIMARY KEY, nom TEXT, adresse TEXT)",
           );
           await db.execute(
+            //creation de la table qui va contenir les filières
             "CREATE TABLE Filiere(id INTEGER PRIMARY KEY, nom TEXT, fraisInscription TEXT)",
-          );
+          ); //table de jointure des Universités et des filières
+          await db.execute('''
+            CREATE TABLE FiliereOption (
+      id INTEGER PRIMARY KEY,
+      id_filiere INTEGER,
+      id_option INTEGER,
+      FOREIGN KEY (id_filiere) REFERENCES Filieres(id),
+      FOREIGN KEY (id_option) REFERENCES Options(id)
+  )
+''');
+          await db.execute('''
+      CREATE TABLE Options (
+        id INTEGER PRIMARY KEY,
+        name TEXT,
+        anneeDeOption TEXT
+      )
+    ''');
+
           await db.execute(
-            "CREATE TABLE FiliereUniversite(id INTEGER PRIMARY KEY, id_filiere INTEGER, id_universite INTEGER)",
-          );
-          await db.execute(
+            // la creation de la table qui contenir des differents diplômes en fonction des series
             "CREATE TABLE Diplome(id INTEGER PRIMARY KEY, nom TEXT)",
           );
           await db.execute(
+            //table de jointure des serie et filière
             "CREATE TABLE DiplomeFiliere(id INTEGER PRIMARY KEY, id_diplome INTEGER, id_filiere INTEGER)",
           );
           await db.execute(
+            // table de diplôme de fin de cycle
             "CREATE TABLE DiplomesFinCycle(id INTEGER PRIMARY KEY, nom TEXT, id_option INTEGER)",
           );
           await db.execute(
+            //table de debouché de chaque filière
             "CREATE TABLE Debouche(id INTEGER PRIMARY KEY, nom TEXT, id_filiere INTEGER)",
           );
         },
@@ -124,19 +144,22 @@ class DatabaseHelper {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
-static Future<void> insertListOfUniversiteFilieres(List<Map<String, dynamic>> universiteFilieres) async {
-  final db = await database;
-  Batch batch = db.batch();
-  for (var liaison in universiteFilieres) {
-    batch.insert(
-      'UniversiteFiliere',
-      liaison,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+
+  static Future<void> insertListOfUniversiteFilieres(
+      List<Map<String, dynamic>> universiteFilieres) async {
+    final db = await database;
+    Batch batch = db.batch();
+    for (var liaison in universiteFilieres) {
+      batch.insert(
+        'UniversiteFiliere',
+        liaison,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit();
+    print(
+        'Toutes les liaisons entre universités et filières ont été insérées avec succès!');
   }
-  await batch.commit();
-  print('Toutes les liaisons entre universités et filières ont été insérées avec succès!');
-}
 
   static Future<void> linkDiplomeToFiliere(int idDiplome, int idFiliere) async {
     final db = await database;

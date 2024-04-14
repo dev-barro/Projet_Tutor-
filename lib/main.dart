@@ -12,7 +12,7 @@ void main() async {
   runApp(const MyApp());
   await DatabaseHelper.insertListOfUniversites(universites);
   await DatabaseHelper.insertListOfDebouches(debouches);
-  await DatabaseHelper.insertListOfFiliere(filieres);
+  await DatabaseHelper.insertListOfFiliere(filieres1);
   await DatabaseHelper.insertListOfUniversiteFilieres(universiteFilieres);
 }
 

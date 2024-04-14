@@ -2,7 +2,7 @@
 
 import 'package:application/pages/ModelsTable.dart';
 
-List<Filiere> filieres = [
+List<Filiere> filieres1 = [
   Filiere(
       id: 1,
       nom: 'Mathematiques Physique Chimie Informatique [MPCI]',
@@ -81,4 +81,9 @@ List<Filiere> filieres = [
       id: 26,
       nom: 'MARKETING ET GESTION COMMERCIALE-SUR TITRE ',
       fraisInscription: '16500'),
+];
+
+List<Filiere> filieres2 = [
+  Filiere(id: 1, nom: 'nom', fraisInscription: 'fraisInscription')
+
 ];
