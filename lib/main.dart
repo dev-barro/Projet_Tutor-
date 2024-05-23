@@ -1,95 +1,227 @@
-import 'dart:io';
-
-import 'package:application/ListDeFiliere.dart';
-import 'package:application/pages/DebouchesList.dart';
-import 'package:application/pages/UniversiteList.dart';
-import 'package:application/pages/JointureUniversiteFiliere.dart';
 import 'package:flutter/material.dart';
-import 'package:application/pages/database_helper.dart';
-import 'package:application/pages/ModelsTable.dart';
+import 'dart:ui'; // Pour utiliser ImageFilter
 
-void main() async {
-  runApp(const MyApp());
-  await DatabaseHelper.insertListOfUniversites(universites);
-  await DatabaseHelper.insertListOfDebouches(debouches);
-  await DatabaseHelper.insertListOfFiliere(filieres1);
-  await DatabaseHelper.insertListOfUniversiteFilieres(universiteFilieres);
-}
+void main() => runApp(MyLAO());
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyLAO extends StatefulWidget {
+  const MyLAO({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Les universités de formations au Burkina Faso',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const DatabaseExamplePage(),
-    );
-  }
+  State<MyLAO> createState() => _MyLAOState();
 }
 
-class DatabaseExamplePage extends StatefulWidget {
-  const DatabaseExamplePage({super.key});
+class _MyLAOState extends State<MyLAO> {
+  int _currentIndex = 0;
 
-  @override
-  // ignore: library_private_types_in_public_api
-  _DatabaseExamplePageState createState() => _DatabaseExamplePageState();
-}
+  final List<Widget> _pages = [
+    HomePage(),
+    ExamplePage(),
+    ProfilePage(),
+    AProposPage(),
+    ContactsPage(),
+    ParametrePage(),
+  ];
 
-class _DatabaseExamplePageState extends State<DatabaseExamplePage> {
-  late Future<List<Universite>> universitesFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    refreshData();
-  }
-
-  Future<void> refreshData() async {
+  void onTabTapped(int index) {
     setState(() {
-      universitesFuture = DatabaseHelper.getAllUniversites();
+      _currentIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text("LAO BF 2024"),
+          backgroundColor: Colors.green,
+        ),
+        body: _pages[_currentIndex],
+        bottomNavigationBar: Container(
+          color: Colors.white54,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildBottomNavigationBarItem(
+                  icon: Icons.home,
+                  label: "Accueil",
+                  index: 0,
+                ),
+                _buildBottomNavigationBarItem(
+                  icon: Icons.layers,
+                  label: "Trouver Une filière",
+                  index: 1,
+                ),
+                _buildBottomNavigationBarItem(
+                  icon: Icons.person,
+                  label: "Profil",
+                  index: 2,
+                ),
+                _buildBottomNavigationBarItem(
+                  icon: Icons.info_outline,
+                  label: "A propos",
+                  index: 3,
+                ),
+                _buildBottomNavigationBarItem(
+                  icon: Icons.contact_page,
+                  label: "Contact",
+                  index: 4,
+                ),
+                _buildBottomNavigationBarItem(
+                  icon: Icons.settings_accessibility_outlined,
+                  label: "Paramètre",
+                  index: 5,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBarItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => onTabTapped(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                color: isSelected ? Colors.green : Colors.black87, size: 32),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.yellow : Colors.green,
+                fontSize: isSelected ? 20 : 14,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class BackgroundImageWidget extends StatelessWidget {
+  final Widget child;
+
+  const BackgroundImageWidget({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // Background image with blur effect
+        Positioned.fill(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/drap.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Content of the page
+        child,
+      ],
+    );
+  }
+}
+
+// Example pages using the background image
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Les universités de formations au Burkina Faso'),
-        centerTitle: true,
-        backgroundColor: Colors.blue,
-      ),
-      body: Center(
-        child: FutureBuilder<List<Universite>>(
-          future: universitesFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-            } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            } else {
-              final universites = snapshot.data ?? [];
-              return ListView.builder(
-                itemCount: universites.length,
-                itemBuilder: (context, index) {
-                  Universite universite = universites[index];
-                  return ListTile(
-                    title: Text(universite.nom),
-                    subtitle: Text(universite.adresse),
-                    leading: universite.imagePath.isNotEmpty
-                        ? Image.file(File(universite
-                            .imagePath)) // Charger l'image à partir du chemin d'accès
-                        : const Icon(Icons
-                            .image_not_supported), // Si aucun chemin d'accès n'est disponible
-                  );
-                },
-              );
-            }
+        title: Text("Home Page"),
+        leading: Builder(
+          builder: (BuildContext context) {
+            return IconButton(
+              icon: Icon(Icons.menu),
+              onPressed: () {
+                Scaffold.of(context).openDrawer(); // Ouvre le drawer
+              },
+            );
           },
         ),
+      ),
+      body: BackgroundImageWidget(
+        child: Center(
+          child: Text(
+            "Home Page",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ExamplePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BackgroundImageWidget(
+      child: Center(
+        child: Text("Example Page", style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+class ProfilePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BackgroundImageWidget(
+      child: Center(
+        child: Text("Profile Page", style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+class AProposPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BackgroundImageWidget(
+      child: Center(
+        child: Text("A Propos Page", style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+class ContactsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BackgroundImageWidget(
+      child: Center(
+        child: Text("Contacts Page", style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+}
+
+class ParametrePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return BackgroundImageWidget(
+      child: Center(
+        child: Text("Parametre Page", style: TextStyle(color: Colors.white)),
       ),
     );
   }
