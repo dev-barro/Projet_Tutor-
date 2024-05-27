@@ -1,6 +1,6 @@
 import 'package:application/pages/Admin/ModelsTable.dart';
 import 'package:flutter/material.dart';
-import 'package:application/pages/database_helper.dart'; // Assurez-vous d'importer le fichier contenant les méthodes d'accès à la base de données
+import 'package:application/pages/database_helper.dart';
 
 class SerieFiliereForm extends StatefulWidget {
   @override
@@ -10,7 +10,8 @@ class SerieFiliereForm extends StatefulWidget {
 class _SerieFiliereFormState extends State<SerieFiliereForm> {
   late List<Filiere> _filieres;
   late List<Serie> _series;
-  late int _selectedFiliereId;
+  int? _selectedFiliereId; // Utilisez un type nullable pour la valeur sélectionnée
+
   List<int> _selectedSeries = [];
 
   @override
@@ -38,22 +39,18 @@ class _SerieFiliereFormState extends State<SerieFiliereForm> {
         child: ListView(
           children: [
             Text('Sélectionnez une filière :'),
-            Column(
-              children: _filieres.map((filiere) {
-                return CheckboxListTile(
-                  title: Text(filiere.nom),
-                  value: _selectedFiliereId == filiere.id,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value != null && value) {
-                        _selectedFiliereId = filiere.id;
-                      } else {
-                        _selectedFiliereId = 0;
-                        _selectedSeries
-                            .clear(); // Réinitialiser la liste des séries sélectionnées lorsque la filière est désélectionnée
-                      }
-                    });
-                  },
+            DropdownButtonFormField<int>(
+              value: _selectedFiliereId,
+              onChanged: (int? newValue) {
+                setState(() {
+                  _selectedFiliereId = newValue; // Affectez directement la nouvelle valeur
+                  _selectedSeries.clear(); // Réinitialiser les séries sélectionnées
+                });
+              },
+              items: _filieres.map((filiere) {
+                return DropdownMenuItem<int>(
+                  value: filiere.id,
+                  child: Text(filiere.nom),
                 );
               }).toList(),
             ),
@@ -77,18 +74,24 @@ class _SerieFiliereFormState extends State<SerieFiliereForm> {
             ),
             ElevatedButton(
               onPressed: () async {
-                for (int serieId in _selectedSeries) {
-                  SerieFiliere newRelation = SerieFiliere(
-                    id: 0,
-                    filiereId: _selectedFiliereId,
-                    serieId: serieId,
-                  );
-                  await DatabaseHelper.insertSerieFiliere(newRelation);
+                if (_selectedFiliereId != null) {
+                  for (int serieId in _selectedSeries) {
+                    SerieFiliere newRelation = SerieFiliere(
+                      id: 0,
+                      filiereId: _selectedFiliereId!,
+                      serieId: serieId,
+                    );
+                    await DatabaseHelper.insertSerieFiliere(newRelation);
+                  }
+                  _selectedSeries.clear();
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Relations ajoutées avec succès'),
+                  ));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Veuillez sélectionner une filière'),
+                  ));
                 }
-                _selectedSeries.clear();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Relations ajoutées avec succès'),
-                ));
               },
               child: Text('Ajouter les relations'),
             ),

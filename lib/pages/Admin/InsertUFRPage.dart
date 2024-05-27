@@ -60,7 +60,8 @@ class InsertUFRForm extends StatefulWidget {
 class _InsertUFRFormState extends State<InsertUFRForm> {
   late List<DropdownMenuItem<int>> _iesDropdownItems;
   late int _selectedIESId;
-  late String _ufrName; // Ajout de la variable _ufrName pour stocker le nom de l'UFR
+  late String
+      _ufrName; // Ajout de la variable _ufrName pour stocker le nom de l'UFR
 
   @override
   void initState() {
@@ -131,7 +132,7 @@ class _InsertUFRFormState extends State<InsertUFRForm> {
 
               // Afficher une boîte de dialogue ou une notification pour indiquer que l'UFR a été ajouté avec succès
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text('UFR ajouté avec succès'),
+                content: Text("$_ufrName ajouté avec succès"),
               ));
             } catch (e) {
               // En cas d'erreur lors de l'insertion de l'UFR, afficher un message d'erreur

@@ -10,12 +10,12 @@ import 'package:application/pages/User/FiliereList.Dart';
 import 'package:application/pages/User/IESListPage.dart';
 import 'package:application/pages/User/SerieList.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class Admin extends StatelessWidget {
+  const Admin({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       title: 'My App',
       debugShowCheckedModeBanner: false, // Supprime le bandeau "debug"
       home: const MainScreen(),

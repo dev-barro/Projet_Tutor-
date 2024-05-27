@@ -6,7 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class DatabaseHelper {
   static Future<Database> get database async {
-      databaseFactory = databaseFactoryFfi;
+    databaseFactory = databaseFactoryFfi;
     return openDatabase(
       join(await getDatabasesPath(), 'LaBase.db'),
       onCreate: _onCreate,
@@ -249,5 +249,104 @@ class DatabaseHelper {
     return List.generate(maps.length, (i) {
       return Serie(id: maps[i]['id'], nom: maps[i]['nom']);
     });
+  }
+
+  static Future<List<UFR>> getAllUFR() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('UFR');
+
+    // Convertir la liste de Map en liste d'objets UFR
+    return List.generate(maps.length, (i) {
+      return UFR(
+        id: maps[i]['id'],
+        nom: maps[i]['nom'],
+        iesId: maps[i]['iesId'],
+      );
+    });
+  }
+
+  // Méthode pour récupérer toutes les relations SerieFiliere avec les noms des filières et des séries
+  static Future<List<Map<String, dynamic>>>
+      getAllSerieFilieresWithNames() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT sf.id, f.nom as filiereNom, s.nom as serieNom
+      FROM SerieFiliere sf
+      JOIN Filiere f ON sf.filiereId = f.id
+      JOIN Serie s ON sf.serieId = s.id
+    ''');
+    return maps;
+  }
+
+  static Future<List<Debouche>> getDebouchesForFiliere(int filiereId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'Debouche',
+      where: 'filiereId = ?',
+      whereArgs: [filiereId],
+    );
+    return List.generate(maps.length, (i) {
+      return Debouche(
+        id: maps[i]['id'],
+        description: maps[i]['description'],
+        filiereId: maps[i]['filiereId'],
+        optionId: maps[i]['optionId'],
+      );
+    });
+  }
+
+  static Future<List<Options>> getOptionsForFiliere(int filiereId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'Options',
+      where: 'filiereId = ?',
+      whereArgs: [filiereId],
+    );
+    return List.generate(maps.length, (i) {
+      return Options(
+        id: maps[i]['id'],
+        name: maps[i]['name'],
+        anneeDeOption: maps[i]['anneeDeOption'],
+        filiereId: maps[i]['filiereId'],
+      );
+    });
+  }
+
+  static Future<String?> getUFRNameById(int id) async {
+    final db = await database;
+    final result = await db.query('UFR', where: 'id = ?', whereArgs: [id]);
+    if (result.isNotEmpty) {
+      return result.first['nom'] as String;
+    } else {
+      return null;
+    }
+  }
+
+  static Future<List<Serie>> getSeriesForFiliere(int filiereId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.rawQuery('''
+      SELECT s.* FROM Serie s
+      JOIN SerieFiliere sf ON s.id = sf.serieId
+      WHERE sf.filiereId = ?
+    ''', [filiereId]);
+
+    return result.isNotEmpty
+        ? result.map((map) => Serie.fromMap(map)).toList()
+        : [];
+  }
+
+  static Future<String?> getIESNameById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'IES',
+      columns: ['nom'],
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first['nom'] as String?;
+    }
+    return null;
   }
 }

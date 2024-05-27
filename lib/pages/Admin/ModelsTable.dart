@@ -191,7 +191,7 @@ class SerieFiliere {
   SerieFiliere(
       {required this.id, required this.filiereId, required this.serieId});
   Map<String, dynamic> toMap() {
-    return {'id': id, 'filiereId': filiereId, 'serieId': serieId};
+    return {'filiereId': filiereId, 'serieId': serieId};
   }
 
   factory SerieFiliere.fromMap(Map<String, dynamic> map) {

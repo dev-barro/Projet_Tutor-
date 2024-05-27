@@ -10,7 +10,6 @@ class AddIESForm extends StatefulWidget {
 class _AddIESFormState extends State<AddIESForm> {
   // Liste des types d'IES disponibles
   List<String> iesTypes = ['PRIVE', 'PUBLIC', 'PROFESSIONNEL'];
-  
 
   // Variable pour stocker le type sélectionné
   String? selectedType;
@@ -109,7 +108,7 @@ class _AddIESFormState extends State<AddIESForm> {
 
     // Affichez un message pour indiquer que l'opération est réussie
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('IES ajoutée avec succès')),
+      SnackBar(content: Text('$nom ajoutée avec succès')),
     );
 
     // Effacez les champs du formulaire après l'insertion
@@ -119,5 +118,8 @@ class _AddIESFormState extends State<AddIESForm> {
     _villeController.clear();
     _bpController.clear();
     _telController.clear();
+    setState(() {
+      selectedType = null;
+    });
   }
 }
