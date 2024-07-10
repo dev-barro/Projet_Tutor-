@@ -1,10 +1,10 @@
+import 'package:application/ContactsPage.dart';
+import 'package:application/FilieresPage.dart';
+import 'package:application/ListeDeFiliere.dart';
+import 'package:application/ProposPage.dart';
 import 'package:flutter/material.dart';
 import 'package:application/HomePage.dart';
 import 'package:application/IESPage.dart';
-import 'package:application/ProfilPage.dart';
-import 'package:application/ContactsPage.dart';
-import 'package:application/ParametrePage.dart';
-import 'package:application/FilieresPage.dart';
 
 class MyNavigationBar extends StatefulWidget {
   @override
@@ -13,108 +13,139 @@ class MyNavigationBar extends StatefulWidget {
 
 class _MyNavigationBarState extends State<MyNavigationBar> {
   int _currentIndex = 0;
+  PageController _pageController = PageController(initialPage: 0);
 
   final List<Widget> _pages = [
     HomePage(),
     FilieresPage(),
-    IESPage(),
-    ProfilPage(),
+    const UniversiteListPage(),
   ];
   final List<String> _appBarTitles = [
     "Accueil",
     "Filières",
     "IES",
-    "Profil",
   ];
 
   final List<String> _drawerItems = [
-    "Rechercher une filière",
-    "Trouver une université",
-    "Profil",
     "À propos",
     "Contacts",
-    "Paramètre",
     "Fermer",
   ];
 
   final List<IconData> _drawerIcons = [
-    Icons.layers,
-    Icons.school,
-    Icons.person,
     Icons.info_rounded,
     Icons.contact_page_sharp,
-    Icons.settings_applications,
     Icons.close,
   ];
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
     });
 
-    // Si l'index correspond à Accueil, ouvrir le tiroir de navigation
-    if (index == 0) {
-      _scaffoldKey.currentState?.openDrawer();
-    }
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
-        title: Text(_appBarTitles[_currentIndex]),
-        backgroundColor: Color.fromARGB(255, 76, 175, 142),
+        title: Text(
+          _appBarTitles[_currentIndex],
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color.fromARGB(255, 76, 175, 142),
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color.fromARGB(237, 255, 255, 255),
+      drawer: Theme(
+        data: Theme.of(context).copyWith(
+          iconTheme: IconThemeData(color: Colors.yellow),
+        ),
+        child: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              const DrawerHeader(
+                decoration: BoxDecoration(color: Color.fromARGB(255, 23, 150, 122)),
+                child: Text(
+                  'MENU',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
-              child: Text('MENU'),
-            ),
-            for (var i = 0; i < _drawerItems.length; i++)
-              ListTile(
-                leading: Icon(
-                    _drawerIcons[i]), // Ajouter l'icône à l'élément du tiroir
-                title: Text(_drawerItems[i]),
-                onTap: () {},
-              ),
-          ],
+              for (var i = 0; i < _drawerItems.length; i++)
+                ListTile(
+                  leading: Icon(
+                    _drawerIcons[i],
+                    color: Colors.black,
+                  ),
+                  title: Text(_drawerItems[i]),
+                  onTap: () {
+                    Navigator.pop(context); // Fermer le tiroir
+                    if (_drawerItems[i] == 'À propos') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ProposPage()),
+                      );
+                    } else if (_drawerItems[i] == 'Contacts') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => ContactsPage()),
+                      );
+                    } else if (_drawerItems[i] == 'Fermer') {
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+            ],
+          ),
         ),
       ),
-      body: _pages[_currentIndex],
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: _pages,
+      ),
       bottomNavigationBar: Container(
-        color: Colors.white54,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildBottomNavigationBarItem(
+        color: Colors.white,
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildBottomNavigationBarItem(
                 icon: Icons.home,
                 label: "Accueil",
                 index: 0,
               ),
-              _buildBottomNavigationBarItem(
+            ),
+            Expanded(
+              child: _buildBottomNavigationBarItem(
                 icon: Icons.layers,
-                label: "Trouver Une filière",
+                label: "Filières",
                 index: 1,
               ),
-              _buildBottomNavigationBarItem(
+            ),
+            Expanded(
+              child: _buildBottomNavigationBarItem(
                 icon: Icons.school,
-                label: "Trouver Une IES",
+                label: "IES",
                 index: 2,
               ),
-              _buildBottomNavigationBarItem(
-                icon: Icons.person,
-                label: "Connaitre mon profil",
-                index: 3,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -13,12 +13,12 @@ class BackgroundImageWidget extends StatelessWidget {
         Positioned.fill(
           child: ColorFiltered(
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.5),
+              Colors.grey.withOpacity(0.2),
               BlendMode.dstATop,
             ),
             child: SizedBox(
               width: double.infinity,
-              height: 300,
+              height: 200,
               child: Image.asset(
                 'assets/images/drap.png',
                 fit: BoxFit.cover,

@@ -1,22 +1,27 @@
 import 'package:application/MyNavigationBar.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'firebase_options.dart';
 
 void main() async {
-  sqfliteFfiInit();
-
-  databaseFactory = databaseFactoryFfi;
-
-  return runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(MonApplication());
 }
 
-class MyApp extends StatelessWidget {
+class MonApplication extends StatelessWidget {
+  const MonApplication({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home:
-          MyNavigationBar(), // Utilisez la classe de votre barre de navigation comme page d'accueil
+      title: 'LAO',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: MyNavigationBar(),
     );
   }
 }

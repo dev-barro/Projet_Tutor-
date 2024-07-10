@@ -1,6 +1,6 @@
-import 'package:application/FiliereDetailsPage.dart';
-import 'package:application/pages/Admin/ModelsTable.dart';
-import 'package:application/pages/database_helper.dart';
+import 'dart:math';
+import 'package:application/ModelTable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class FilieresPage extends StatefulWidget {
@@ -9,205 +9,434 @@ class FilieresPage extends StatefulWidget {
 }
 
 class _FilieresPageState extends State<FilieresPage> {
-  List<Map<String, dynamic>> universites = [];
-  List<Map<String, dynamic>> ufrs = [];
-  List<Map<String, dynamic>> series = [];
-  List<Filiere> filieres = [];
-  List<Filiere> filteredFilieres = [];
+  late Future<List<Map<String, dynamic>>> _filieresFuture;
+  String _searchQuery = '';
+  String _selectedSerie = 'Tous';
+  List<String> _series = [];
 
-  String? selectedUniversite;
-  String? selectedUFR;
-  String? selectedSerie;
-  List<Map<String, dynamic>> serieFilieres = [];
+  final _random = Random();
 
   @override
   void initState() {
     super.initState();
-    fetchDataFromDatabase();
+    _filieresFuture = getFilieres();
   }
 
-  Future<void> fetchDataFromDatabase() async {
-    final universitesData = await DatabaseHelper.getIES();
-    final ufrsData = await DatabaseHelper.getUFR();
-    final seriesData = await DatabaseHelper.getSerie();
-    final filieresData = await DatabaseHelper.getAllFilieres();
-    final serieFilieresData =
-        await DatabaseHelper.getAllSerieFilieresWithNames();
+  Future<List<Map<String, dynamic>>> getFilieres() async {
+    List<Map<String, dynamic>> filieres = [];
+    Set<String> seriesSet = {};
+
+    try {
+      QuerySnapshot universitesSnapshot =
+          await FirebaseFirestore.instance.collection('universites').get();
+
+      for (var universiteDoc in universitesSnapshot.docs) {
+        QuerySnapshot ufrsSnapshot = await FirebaseFirestore.instance
+            .collection('universites')
+            .doc(universiteDoc.id)
+            .collection('ufrs')
+            .get();
+
+        for (var ufrDoc in ufrsSnapshot.docs) {
+          QuerySnapshot filieresSnapshot = await FirebaseFirestore.instance
+              .collection('universites')
+              .doc(universiteDoc.id)
+              .collection('ufrs')
+              .doc(ufrDoc.id)
+              .collection('Filieres')
+              .get();
+
+          for (var filiereDoc in filieresSnapshot.docs) {
+            Filiere filiere = Filiere.fromMap(
+                filiereDoc.data() as Map<String, dynamic>, filiereDoc.id);
+
+            QuerySnapshot seriesSnapshot = await FirebaseFirestore.instance
+                .collection('universites')
+                .doc(universiteDoc.id)
+                .collection('ufrs')
+                .doc(ufrDoc.id)
+                .collection('Filieres')
+                .doc(filiereDoc.id)
+                .collection('Serie')
+                .get();
+
+            for (var serieDoc in seriesSnapshot.docs) {
+              seriesSet.add(serieDoc['nom']);
+            }
+
+            filieres.add({
+              'filiere': filiere,
+              'universiteId': universiteDoc.id,
+              'ufrId': ufrDoc.id,
+              'series': seriesSnapshot.docs
+                  .map((doc) =>
+                      Serie.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+                  .toList(),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error retrieving filieres: $e');
+    }
 
     setState(() {
-      universites = universitesData;
-      ufrs = ufrsData;
-      series = seriesData
-          .map((serie) => {'id': serie.id, 'nom': serie.nom})
-          .toList();
-      filieres = filieresData;
-      serieFilieres = serieFilieresData;
+      _series = ['Tous', ...seriesSet];
     });
+
+    return filieres;
   }
 
-  void applyFilters() {
-    setState(() {
-      filteredFilieres = filieres.where((filiere) {
-        bool matchesUniversite = selectedUniversite == null ||
-            universites.any((universite) =>
-                universite['nom'] == selectedUniversite &&
-                universite['id'] == filiere.iesId);
-        bool matchesUFR = selectedUFR == null ||
-            ufrs.any((ufr) =>
-                ufr['nom'] == selectedUFR && ufr['id'] == filiere.ufrId);
-        bool matchesSerie = selectedSerie == null ||
-            serieFilieres.any((relation) =>
-                relation['serieNom'] == selectedSerie &&
-                relation['filiereNom'] == filiere.nom);
-
-        return matchesUniversite && matchesUFR && matchesSerie;
-      }).toList();
-    });
+  Color randomColor() {
+    return Color.fromARGB(
+      255,
+      _random.nextInt(256),
+      _random.nextInt(256),
+      _random.nextInt(256),
+    );
   }
 
-  void navigateToFiliereDetails(Filiere filiere) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FiliereDetailsPage(filiere: filiere),
+  IconData randomIcon() {
+    List<IconData> icons = [
+      Icons.school,
+      Icons.account_balance,
+      Icons.business,
+      Icons.science,
+      Icons.settings,
+      Icons.computer,
+      Icons.engineering,
+      Icons.healing,
+      Icons.language,
+      Icons.public,
+    ];
+    return icons[_random.nextInt(icons.length)];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/15.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher une filière...',
+                    prefixIcon: Icon(Icons.search, color: Colors.blue),
+                    filled: true,
+                    fillColor: Colors.white,
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.blue, width: 2.0),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide:
+                          BorderSide(color: Colors.grey[400]!, width: 1.0),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Veuillez sélectionner une série',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.grey[400]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: DropdownButton<String>(
+                        value: _selectedSerie,
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _selectedSerie = newValue!;
+                          });
+                        },
+                        items: _series
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        icon: Icon(Icons.arrow_drop_down, color: Colors.blue),
+                        isExpanded: true,
+                        underline: SizedBox(),
+                        style: TextStyle(color: Colors.blue, fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _filieresFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Erreur: ${snapshot.error}'));
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Center(child: Text('Aucune filière trouvée.'));
+                    } else {
+                      List<Map<String, dynamic>> filteredFilieres =
+                          snapshot.data!.where((filiereData) {
+                        Filiere filiere = filiereData['filiere'];
+                        List<Serie> series = filiereData['series'];
+                        bool matchesSerie = _selectedSerie == 'Tous' ||
+                            series.any((serie) => serie.nom == _selectedSerie);
+                        bool matchesQuery = filiere.nom
+                            .toLowerCase()
+                            .contains(_searchQuery.toLowerCase());
+                        return matchesSerie && matchesQuery;
+                      }).toList();
+
+                      return ListView.builder(
+                        itemCount: filteredFilieres.length,
+                        itemBuilder: (context, index) {
+                          var filiereData = filteredFilieres[index];
+                          Filiere filiere = filiereData['filiere'];
+                          String universiteId = filiereData['universiteId'];
+                          String ufrId = filiereData['ufrId'];
+
+                          return Card(
+                            color: randomColor(),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15.0),
+                            ),
+                            elevation: 5,
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FiliereDetailPage(
+                                      filiere: filiere,
+                                      universiteId: universiteId,
+                                      ufrId: ufrId,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.all(8.0), // Adjust padding
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(randomIcon(),
+                                        size: 40, color: Colors.white),
+                                    SizedBox(width: 10),
+                                    Flexible(
+                                      child: Text(
+                                        filiere.nom,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+}
+
+class FiliereDetailPage extends StatelessWidget {
+  final Filiere filiere;
+  final String universiteId;
+  final String ufrId;
+
+  FiliereDetailPage(
+      {required this.filiere, required this.universiteId, required this.ufrId});
+
+  Future<Map<String, dynamic>> fetchData() async {
+    String universiteNom = '';
+    String ufrNom = '';
+    List<Option> options = [];
+    List<Serie> series = [];
+
+    try {
+      DocumentSnapshot universiteDoc = await FirebaseFirestore.instance
+          .collection('universites')
+          .doc(universiteId)
+          .get();
+      universiteNom = universiteDoc['nom'] ?? '';
+
+      DocumentSnapshot ufrDoc = await FirebaseFirestore.instance
+          .collection('universites')
+          .doc(universiteId)
+          .collection('ufrs')
+          .doc(ufrId)
+          .get();
+      ufrNom = ufrDoc['nom'] ?? '';
+
+      QuerySnapshot optionsSnapshot = await FirebaseFirestore.instance
+          .collection('universites')
+          .doc(universiteId)
+          .collection('ufrs')
+          .doc(ufrId)
+          .collection('Filieres')
+          .doc(filiere.id)
+          .collection('Options')
+          .get();
+      options = optionsSnapshot.docs
+          .map((doc) =>
+              Option.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .toList();
+
+      QuerySnapshot seriesSnapshot = await FirebaseFirestore.instance
+          .collection('universites')
+          .doc(universiteId)
+          .collection('ufrs')
+          .doc(ufrId)
+          .collection('Filieres')
+          .doc(filiere.id)
+          .collection('Serie')
+          .get();
+      series = seriesSnapshot.docs
+          .map((doc) =>
+              Serie.fromMap(doc.data() as Map<String, dynamic>, doc.id))
+          .toList();
+    } catch (e) {
+      print('Error retrieving data: $e');
+    }
+
+    return {
+      'universiteNom': universiteNom,
+      'ufrNom': ufrNom,
+      'options': options,
+      'series': series,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Filières'),
+        title: Text('Détails de la Filière'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 16.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Universités:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: fetchData(),
+        builder: (context, AsyncSnapshot<Map<String, dynamic>> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Erreur: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data == null) {
+            return Center(child: Text('Aucune information trouvée.'));
+          } else {
+            String universiteNom = snapshot.data!['universiteNom'] ?? '';
+            String ufrNom = snapshot.data!['ufrNom'] ?? '';
+            List<Option> options =
+                (snapshot.data!['options'] as List<dynamic>).cast<Option>();
+            List<Serie> series =
+                (snapshot.data!['series'] as List<dynamic>).cast<Serie>();
+
+            return SingleChildScrollView(
+              // Make the content scrollable
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Nom: ${filiere.nom}', style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 8),
+                    Text('Université: $universiteNom',
+                        style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 8),
+                    Text('UFR: $ufrNom', style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 8),
+                    if (filiere.matieresDominantes != null)
+                      Text('Matières dominantes: ${filiere.matieresDominantes}',
+                          style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 8),
+                    if (filiere.matieresImportantesDeLaTle != null)
+                      Text(
+                          'Matières importantes de la Terminale: ${filiere.matieresImportantesDeLaTle}',
+                          style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 8),
+                    if (filiere.accessibilite != null)
+                      Text('Accessibilité: ${filiere.accessibilite}',
+                          style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 8),
+                    if (filiere.contrainte != null)
+                      Text('Contraintes: ${filiere.contrainte}',
+                          style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 8),
+                    if (filiere.informationComplementaire != null)
+                      Text(
+                          'Informations complémentaires: ${filiere.informationComplementaire}',
+                          style: TextStyle(fontSize: 16)),
+                    SizedBox(height: 16),
+                    Text('Options:',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: options
+                          .map((option) =>
+                              Text(option.nom, style: TextStyle(fontSize: 16)))
+                          .toList(),
+                    ),
+                    SizedBox(height: 16),
+                    Text('Séries:',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: series
+                          .map((serie) =>
+                              Text(serie.nom, style: TextStyle(fontSize: 16)))
+                          .toList(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: universites.isNotEmpty
-                  ? DropdownButton<String>(
-                      isExpanded: true,
-                      items: universites.map((data) {
-                        return DropdownMenuItem<String>(
-                          value: data['nom'] as String,
-                          child: Text(data['nom'] as String),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedUniversite = newValue;
-                        });
-                      },
-                      value: selectedUniversite,
-                      hint: Text('Sélectionnez une université'),
-                    )
-                  : Text('Aucune université disponible'),
-            ),
-            SizedBox(height: 16.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'UFRs:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: ufrs.isNotEmpty
-                  ? DropdownButton<String>(
-                      isExpanded: true,
-                      items: ufrs.map((data) {
-                        return DropdownMenuItem<String>(
-                          value: data['nom'] as String,
-                          child: Text(data['nom'] as String),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedUFR = newValue;
-                        });
-                      },
-                      value: selectedUFR,
-                      hint: Text('Sélectionnez un UFR'),
-                    )
-                  : Text('Aucun UFR disponible'),
-            ),
-            SizedBox(height: 16.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Séries:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: series.isNotEmpty
-                  ? DropdownButton<String>(
-                      isExpanded: true,
-                      items: series.map((data) {
-                        return DropdownMenuItem<String>(
-                          value: data['nom'] as String,
-                          child: Text(data['nom'] as String),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedSerie = newValue;
-                        });
-                      },
-                      value: selectedSerie,
-                      hint: Text('Sélectionnez une série'),
-                    )
-                  : Text('Aucune série disponible'),
-            ),
-            SizedBox(height: 16.0),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  applyFilters();
-                },
-                child: Text('Rechercher'),
-              ),
-            ),
-            SizedBox(height: 16.0),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                'Filières:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            filteredFilieres.isNotEmpty
-                ? ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: filteredFilieres.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(filteredFilieres[index].nom),
-                        onTap: () {
-                          navigateToFiliereDetails(filteredFilieres[index]);
-                        },
-                      );
-                    },
-                  )
-                : Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text('Aucune filière disponible'),
-                  ),
-          ],
-        ),
+            );
+          }
+        },
       ),
     );
   }
